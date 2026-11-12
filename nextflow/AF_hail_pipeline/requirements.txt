@@ -1,0 +1,8 @@
+hail
+PyYAML
+pandas
+matplotlib
+seaborn
+scikit-learn
+scipy
+plotly
