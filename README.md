@@ -87,11 +87,19 @@ Once all the requirements have been installed, clone this repository to your loc
 
 ## Option 2: Docker
 
-See [README-for-docker.md](https://github.com/EGA-archive/AF_hail_pipeline/blob/main/README--for-docker.md) to use this pipeline inside a Docker container. 
+See [README--for-docker.md](README--for-docker.md) to run the original Python pipeline in a Docker container.
 
-## HOW TO RUN THE PIPELINE
+## Option 3: Nextflow with Docker
 
-All parameters and module executions are controlled via `config.yaml`. Example:
+A [Nextflow implementation](nextflow/) is available to orchestrate the pipeline stages, from preprocessing and quality control through relatedness, ancestry inference and allele-frequency annotation. It uses Docker containers to provide a reproducible execution environment.
+
+This implementation also supports **optional AC0 flagging** in the final VCF. AC0 flags variants with no high-quality alternative allele calls, while preserving existing FILTER annotations and retaining all variants.
+
+For configuration, installation and execution instructions, see the [Nextflow README](nextflow/README.md).
+
+## HOW TO RUN THE ORIGINAL PYTHON PIPELINE
+
+For the original Python implementation, all parameters and module executions are controlled via `config.yaml`. Example:
 
 ```yaml
 ## ============================================================
@@ -396,7 +404,7 @@ Each module and function can be run independently:
 ---
 
 
-**Once the `conf.yaml` is adjusted to your needs, you only need to run:**
+**Once `config.yaml` is adjusted to your needs, run:**
 
 ```
 python vcf-af-pipeline.py
