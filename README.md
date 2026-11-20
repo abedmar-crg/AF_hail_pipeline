@@ -125,21 +125,21 @@ For the original Python implementation, all parameters and module executions are
 ## Core paths and dataset-wide settings
 ## ============================================================
 
-vcf_dir: ""
+vcf_dir: "/data/input/converted/try"
 # Directory containing all input VCF files.
 # IMPORTANT: all VCFs must use the same reference genome.
 # Docker path: /data/input
 
-vcf_for_header: ""
+vcf_for_header: "/data/input/converted/try/ac0_valid.vcf"
 # Representative VCF used to build the final output VCF header.
 # TODO: ideally remove this and use one file automatically from vcf_dir.
 # Docker path: /data/input/filename.vcf.gz
 
-ref_gen: ""
+ref_gen: "GRCh37"
 # Reference genome build used by the input VCFs.
 # Accepted values: "GRCh37" | "GRCh38"
 
-seq_type: ""
+seq_type: "WGS"
 # Sequencing strategy.
 # Affects sample QC thresholds in sample_filters.
 # Accepted values: "WGS" | "WES"
@@ -150,15 +150,15 @@ seq_type: ""
 ## Files produced by the pipeline
 ## ============================================================
 
-mt_from_vcf: ""
+mt_from_vcf: "/data/work/test.mt"
 # MatrixTable generated during preprocessing.
 # Docker path: /data/work/filename.mt
 
-mt_afterQC: ""
+mt_afterQC: "/data/work/test_afterQC.mt"
 # MatrixTable after QC steps.
 # Docker path: /data/work/filename_afterQC.mt
 
-final_vcf_AF: ""
+final_vcf_AF: "/data/output/test_afterHail.vcf.bgz"
 # Final output VCF annotated with recalculated allele frequencies.
 # Only relevant when af_annotation = true.
 # Docker path: /data/output/your_output_name.vcf.bgz
@@ -167,7 +167,7 @@ summary_VCF: true
 # If true, the output VCF will contain only variant-level information
 # (no sample columns or genotype data).
 
-use_allele_counts: true
+use_allele_counts: false
 # If true, the final VCF will include AC_hom, AC_het, and AC_hemi fields instead of genotye counts.
 # AC_hom = 2*nhomalt, AC_het = nhet, AC_hemi = nhemi.
 
@@ -179,20 +179,20 @@ use_allele_counts: true
 ## Set to true to run a module, false to skip it.
 ##
 ## Notes:
-## - prfalseeprocessing = false assumes mt_from_vcf already exists
+## - preprocessing = false assumes mt_from_vcf already exists
 ## - infer_ancestry and submit_ancestry are mutually exclusive
 ## ============================================================
 
 preprocessing: true
 # Runs preprocessing: VCF conversion, splitting, and initial filtering.
 
-infer_sex: true
+infer_sex: false
 # Infers biological sex from genotype data and flags mismatches.
 
-delete_related: true
+delete_related: false
 # Detects and removes related samples (duplicates / close relatives).
 
-infer_ancestry: true
+infer_ancestry: false
 # Infer ancestry from genotype data using GrafAnc.
 # Must be false if submit_ancestry = true.
 
@@ -200,13 +200,22 @@ submit_ancestry: false
 # Read ancestry labels from ancestry_information file.
 # Must be false if infer_ancestry = true.
 
-ancestry_information: ""
+ancestry_information: "gcat-submitted-metadata.csv"
 # CSV with known ancestry labels.
 # Only used when submit_ancestry = true.
 # Required columns (comma-separated header): SampleID,Population
 
 af_annotation: true
 # Recalculate allele frequencies and annotate the final VCF.
+
+ac0_flagging: true
+# Optional: add FILTER=AC0 to sites whose ALT allele count becomes zero
+# after gnomAD-style adjusted genotype QC (GQ>=20, diploid DP>=10,
+# haploid DP>=5, heterozygous ALT balance AD/DP>0.2).
+# NEVER removes variants or alters the recalculated AF/AC/AN.
+# If any input VCF lacks GT, GQ, DP, or AD FORMAT fields (or the required
+# values are incomplete), AC0 is automatically SKIPPED and M4 continues.
+# Inspect results/qc/ac0/ac0_status.tsv and ac0_status.json for details.
 
 
 ## ============================================================
@@ -223,16 +232,16 @@ convert_vcfs: true
 # Convert input VCFs into a Hail MatrixTable.
 # Must be true on first run.
 
-split_multiallelic: true
+split_multiallelic: false
 # Split multiallelic variants into biallelic rows.
 
-genotype_filtering: true
+genotype_filtering: false
 # Apply genotype-level filters using genotype_filters below.
 
-variant_filtering: true
+variant_filtering: false
 # Apply variant-level filters using variant_filters below.
 
-sample_filtering: true
+sample_filtering: false
 # Apply sample-level QC using sample_filters below.
 
 
@@ -242,14 +251,13 @@ sample_filtering: true
 ## ============================================================
 ## To disable a filter, leave it commented like:
 ##   QD_threshold: #2.0
-##   or set it to false
 ## ============================================================
 
 variant_filters:
-  QD_threshold: 2.0
+  QD_threshold: #2.0
   # Quality by Depth. Low values suggest low-confidence variants.
 
-  DP_threshold: 15
+  DP_threshold: #15
   # Minimum total read depth across the cohort at a site.
 
   QUAL_threshold: 0.4
@@ -261,7 +269,7 @@ variant_filters:
   FS_threshold: 60
   # Fisher Strand bias. High values suggest strand-specific artifacts.
 
-  READPOSRANKSUM_threshold: -8.0
+  READPOSRANKSUM_threshold: #-8.0
   # Filters variants where alt alleles cluster near read ends.
 
 
@@ -276,11 +284,7 @@ genotype_filters:
   GQ_threshold: 20
   # Genotype Quality. Calls below this are set to missing.
 
-  AB_threshold_lower: 0.2
-  # Allele Balance for heterozygous calls.
-  # Calls below this threshold are set to missing.
-
-  AB_threshold_upper: 0.8
+  AB_threshold: #0.2
   # Allele Balance for heterozygous calls.
   # Calls below this threshold are set to missing.
 
@@ -294,10 +298,10 @@ genotype_filters:
 ## ============================================================
 
 sample_filters:
-  DP_STATS.MEAN_WGS_threshold: 15
+  DP_STATS.MEAN_WGS_threshold: #15
   # Minimum mean read depth for WGS samples.
 
-  DP_STATS.MEAN_WES_threshold: 10
+  DP_STATS.MEAN_WES_threshold: #10
   # Minimum mean read depth for WES samples.
 
   CALL_RATE_threshold: 0.95
@@ -309,10 +313,10 @@ sample_filters:
   N_SINGLETON_WES_threshold: 5000
   # Maximum singleton count for WES.
 
-  CHARR_threshold: 0.05
+  CHARR_threshold: #0.05
   # Contamination estimate threshold.
 
-  R_TI_TV: true
+  R_TI_TV: false
   # Expected Ti/Tv ratio. Thresholds calculated as 4 median absolute deviations from Ti/Tv ratio of the cohort.
 
   R_HET_HOM_VAR: true
@@ -378,17 +382,18 @@ spark_sql_shuffle_partitions: "200"
 spark_network_timeout: "800s"
 # Maximum Spark network wait time.
 
-spark_local_dir: "/work/tmp"
+spark_local_dir: "/data/work/tmp"
 # Spark temporary directory.
 # Docker path: /data/work/tmp
 
-tmp_dir: "/work/tmp"
+tmp_dir: "/data/work/tmp"
 # Hail temporary directory.
 # Docker path: /data/work/tmp
 
-local_tmpdir: "/work/tmp"
+local_tmpdir: "/data/work/tmp"
 # Local temporary directory for Hail filesystem operations.
 # Docker path: /data/work/tmp
+
 ```
 
 ---
